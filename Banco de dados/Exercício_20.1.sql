@@ -39,6 +39,8 @@ SELECT * FROM film_actor;
 SELECT * FROM film_category;
 SELECT * FROM film_text;
 SELECT * FROM *inúmeros que não foram citados*;
+-------------------------------------------------
+
 
 -- Unificando coisas com o CONCAT
 -- Habilita o uso do DB Salika
@@ -49,3 +51,7 @@ USE salika;
 -- A palavra reservada AS serve como um apelido para o novo nome de coluna.
 SELECT CONCAT(first_name, ' ', last_name) AS 'Nome Completo' FROM actor;
 SELECT CONCAT(first_name, ' ', last_name) FROM actor;
+
+-- Seleciona as colunas título e ano_de_lançamento e faz uma nova coluna.
+SELECT CONCAT('Título: ', title,' - ', release_year) AS Lançamento do filme FROM film;
+-------------------------------------------------
