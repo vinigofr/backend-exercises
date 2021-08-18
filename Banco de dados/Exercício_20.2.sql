@@ -54,4 +54,5 @@ SELECT CONCAT(first_name, ' ', last_name) FROM actor;
 
 -- Seleciona as colunas título e ano_de_lançamento e faz uma nova coluna.
 SELECT CONCAT('Título: ', title,' - ', release_year) AS Lançamento do filme FROM film;
+
 -------------------------------------------------
