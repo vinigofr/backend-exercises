@@ -41,7 +41,6 @@ SELECT * FROM film_text;
 SELECT * FROM *inúmeros que não foram citados*;
 -------------------------------------------------
 
-
 -- Unificando coisas com o CONCAT
 -- Habilita o uso do DB Salika
 USE salika;
@@ -56,3 +55,12 @@ SELECT CONCAT(first_name, ' ', last_name) FROM actor;
 SELECT CONCAT('Título: ', title,' - ', release_year) AS Lançamento do filme FROM film;
 
 -------------------------------------------------
+
+-- Tratando dados com o DISTINCT, como por exemplo, fazer uma remoção.
+USE sakila;
+
+-- Seleciona colunas para exibição.
+SELECT first_name, last_name from actor;
+
+-- Seleciona colunas, porém remove as que tem dados repetidos.
+SELECT DISTINCT first_name, last_name FROM actor;
