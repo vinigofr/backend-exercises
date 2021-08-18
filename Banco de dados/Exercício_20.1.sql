@@ -1,3 +1,4 @@
+-- Primeiros passos com SELECT.
 -- Select é o primeiro passo. É o comando que será amplamente utilizado.
 
 SELECT 'Olá, bem-vindo ao SQL!';
@@ -38,3 +39,13 @@ SELECT * FROM film_actor;
 SELECT * FROM film_category;
 SELECT * FROM film_text;
 SELECT * FROM *inúmeros que não foram citados*;
+
+-- Unificando coisas com o CONCAT
+-- Habilita o uso do DB Salika
+USE salika;
+
+-- Seleciona as colunas a serem "misturadas". Elas serão passadas como parâmetro
+-- da função CONCAT.
+-- A palavra reservada AS serve como um apelido para o novo nome de coluna.
+SELECT CONCAT(first_name, ' ', last_name) AS 'Nome Completo' FROM actor;
+SELECT CONCAT(first_name, ' ', last_name) FROM actor;
