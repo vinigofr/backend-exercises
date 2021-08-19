@@ -39,6 +39,7 @@ SELECT * FROM film_actor;
 SELECT * FROM film_category;
 SELECT * FROM film_text;
 SELECT * FROM *inúmeros que não foram citados*;
+
 -------------------------------------------------
 
 -- Unificando coisas com o CONCAT
@@ -100,3 +101,26 @@ SELECT DISTINCT Idade FROM alunos;
 
 -- Quantas linhas você encontraria na query anterior?
 4;
+
+-------------------------------------------------
+
+-- Contanto resultados com o COUNT
+-- Começando por um exemplo básico:
+-- MySQL, traga pra, em coluna x, palavras que tenham 'Alagoas'
+SELECT COUNT(cidades) FROM brasil
+WHERE cidades = 'Alagoas';
+-- Provavelmente esse resultado retornará um valor 1
+--
+-- Sobre sakila: sakila.staff
+USE sakila
+-- Quantas senhas temos cadastradas nessa tabela?
+SELECT count(password) FROM staff WHERE password != '';
+1;
+
+-- Quantas pessoas temos no total trabalhando para nossa empresa?
+SELECT count(staff_id) FROM staff;
+2;
+
+-- Quantos emails temos cadastrados nessa tabela?
+SELECT count(email) FROM staff;
+2;
