@@ -124,3 +124,7 @@ SELECT count(staff_id) FROM staff;
 -- Quantos emails temos cadastrados nessa tabela?
 SELECT count(email) FROM staff;
 2;
+
+-------------------------------------------------
+
+-- Limitando resultados com LIMIT
