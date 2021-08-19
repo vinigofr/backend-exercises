@@ -144,3 +144,15 @@ SELECT inventory_id FROM rental WHERE inventory_id = 4 LIMIT 1;
 -------------------------------------------------
 
 -- Agora, um pouco de ORDER BY:
+-- Ordenando dados a partir de uma coluna;
+SELECT * FROM sakila.address
+ORDER BY address (ASC || DESC);
+-- Dentro de parênteses, pode ir ASC ou DESC, dependendo da forma
+-- como os dados serão organizados.
+--
+-- OK, ok, mas e por mais de uma columa?
+-- É só passar a segunda coluna como parâmetro, como exemplo abaixo:
+SELECT * FROM sakila.address
+ORDER BY address(ASC || DESC), district(ASC || DESC);
+-- As columas podem ser ordenadas separadamente.
+
