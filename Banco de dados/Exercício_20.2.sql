@@ -131,3 +131,16 @@ SELECT count(email) FROM staff;
 SELECT * FROM sakila.rental LIMIT 10;
 -- O código acima faz uso da palavra reservada LIMITE, que
 -- ao lado pode receber um número como fator limitante.
+
+-- Limitando linhas, pulando outras.
+-- Para pular uma certa quantidade de linhas do resultado -> OFFSET.
+SELECT * FROM rental LIMIT 10 OFFSET 3;
+-- Onde LIMIT é o limite de resultados e OFFSET é a
+-- quantidade de primeiras linhas que queremos excluir. 
+--
+-- Quando queremos resultados específicos com o FROM, WHERE e LIMIT.
+SELECT inventory_id FROM rental WHERE inventory_id = 4 LIMIT 1;
+
+-------------------------------------------------
+
+-- Agora, um pouco de ORDER BY:
