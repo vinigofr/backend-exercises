@@ -128,3 +128,6 @@ SELECT count(email) FROM staff;
 -------------------------------------------------
 
 -- Limitando resultados com LIMIT
+SELECT * FROM sakila.rental LIMIT 10;
+-- O código acima faz uso da palavra reservada LIMITE, que
+-- ao lado pode receber um número como fator limitante.
