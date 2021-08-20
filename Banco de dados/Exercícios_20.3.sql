@@ -1,4 +1,4 @@
--- Filtrar resultados de consultas com o WHERE .
+-- Filtrar resultados de consultas com o WHERE.
 -- Tirando como base o DB Sakila, famos filtar por filmes que não contenham
 -- o nome 'ACADEMY' no título.
 USE sakila;
@@ -9,36 +9,29 @@ WHERE title NOT LIKE '%ACADEMY%';
 -- Ou podemos verificar filmes que tenham o custo maior que 20
 SELECT * from film
 WHERE cost > 20;
+
 ----------------------------------------------------------------------------
+
 -- Utilizar operadores booleanos e relacionais em consultas.
 -- Ou podemos verificar com condicionais AND e OR
 SELECT * FROM film
 WHERE title LIKE 'john o leião' AND rate = 'LIVRE PARA TODOS OS PÚBLICOS';  
 --
---LEGENDA:
-
--- 1. Precisamos identificar os dados do cliente com o e-mail LEONARD.SCHOFIELD@sakilacustomer.org .
--- 2. Precisamos de um relatório dos nomes dos clientes, em ordem alfabética , 
--- que não estão mais ativos no nosso sistema e pertencem à loja com o id = 2 , e não inclua o cliente KENNETH no resultado.
--- 3. O setor financeiro quer saber título, descrição, ano de lançamento e 
--- valor do custo de substituição ( replacement_cost ), dos 100 filmes com o maior custo de substituição, 
--- do valor mais alto ao mais baixo, entre os filmes feitos para menores de idade e que têm o custo mínimo 
--- de substituição de $18,00 dólares. Em caso de empate, ordene em ordem alfabética pelo título.
--- 4. Quantos clientes estão ativos e na loja 1 ?
--- 5. Mostre todos os detalhes dos clientes que não estão ativos na loja 1 .
--- 6. Precisamos descobrir quais são os 50 filmes feitos apenas para adultos com a menor taxa de 
--- aluguel, para que possamos fazer uma divulgação melhor desses filmes. Em caso de empate, ordene em ordem alfabética pelo título.
--- 1
+-- 1. Precisamos identificar os dados do cliente com o e-mail LEONARD.SCHOFIELD@sakilacustomer.org.
 USE sakila;
 SELECT * FROM customer
 WHERE email = 'LEONARD.SCHOFIELD@sakilacustomer.org';
--- 2
+-- 2. Precisamos de um relatório dos nomes dos clientes, em ordem alfabética , 
+-- que não estão mais ativos no nosso sistema e pertencem à loja com o id = 2 , e não inclua o cliente KENNETH no resultado.
 SELECT * FROM customer
 WHERE first_name NOT LIKE 'KENNETH'
 AND active IS FALSE
 AND store_id LIKE 2
 ORDER BY first_name;
--- 3
+-- 3. O setor financeiro quer saber título, descrição, ano de lançamento e 
+-- valor do custo de substituição ( replacement_cost ), dos 100 filmes com o maior custo de substituição, 
+-- do valor mais alto ao mais baixo, entre os filmes feitos para menores de idade e que têm o custo mínimo 
+-- de substituição de $18,00 dólares. Em caso de empate, ordene em ordem alfabética pelo título.
 SELECT * FROM film
 WHERE (rating = 'G'
 OR rating = 'PG'
@@ -48,17 +41,19 @@ OR rating = 'R')
 AND replacement_cost >= 18
 ORDER BY replacement_cost DESC
 LIMIT 100;
--- 4
+-- 4. Quantos clientes estão ativos e na loja 1 ?
 SELECT COUNT(*) FROM customer
 WHERE active IS TRUE;
--- 5
+-- 5. Mostre todos os detalhes dos clientes que não estão ativos na loja 1 .
 SELECT * FROM customer
 WHERE active IS FALSE
 AND store_id = 1;
--- 6
+-- 6. Precisamos descobrir quais são os 50 filmes feitos apenas para adultos com a menor taxa de 
+-- aluguel, para que possamos fazer uma divulgação melhor desses filmes. Em caso de empate, ordene em ordem alfabética pelo título.
 SELECT * FROM film
 WHERE rating = 'NC-17'
 ORDER BY replacement_cost ASC;
+
 ----------------------------------------------------------------------------
 
 -- Criar consultas mais dinâmicas e maleáveis com LIKE.
@@ -119,3 +114,7 @@ SELECT * FROM sakila.film
 WHERE description LIKE '%monkey%' 
 AND description LIKE '%sumo%';
 
+----------------------------------------------------------------------------
+
+-- Englobando uma faixa de resultados com IN e BETWEEN
+-- Operador IN:
