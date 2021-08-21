@@ -163,3 +163,66 @@ WHERE payment_date BETWEEN '2005/05/01' AND '2005/08/01';
 -- alfabética pelo título.
 SELECT title, release_year, rental_duration FROM sakila.film
 WHERE rental_duration BETWEEN 3 AND 6;
+
+----------------------------------------------------------------------------
+-- Encontrando e separando resultados que incluem datas
+-- No MySQL, o tipo DATE faz parte dos tipos de dados temporais
+-- mas quando datas, o formato é sempre ANO-MÊS-DIA (NÃO É POSSÍVEL ALTERÁ-LA)
+-- Comandos SQL p/ DATAS de 
+DATE -> ('1001/01/01' BETWEEN '9999-12-31'); -- FORMATO YYYY-MM-DD
+DATETIME -> ('1000-01-01 00:00:00' BETWEEN '9999-12-31 23:59:59') -- FORMATO YYYY-MM-DD HH:MM:SS
+--
+-- Modos de encontrar itens por DATA
+SELECT * FROM sakila.payment
+WHERE DATE(payment_date) = '2005-07-31';
+--
+-- Modos de encontrar itens por LIKE
+-- Encontra todos pagamentos deste dia, ignorando horas, minutos e segundos
+SELECT * FROM sakila.payment
+WHERE payment_date LIKE '2005-07-31%';
+-- Encontra um pagamento com dia e hora exatos
+SELECT * FROM sakila.payment
+WHERE payment_date LIKE '2005-08-20 00:30:52';
+-- Encontra pagamentos especificando um valor mínimo e um valor máximo para a data
+SELECT *
+FROM sakila.payment
+WHERE payment_date BETWEEN '2005-05-26 00:00:00' AND '2005-05-27 23:59:59';
+--
+-- Pegando informações específicas de DATA
+-- Teste cada um dos comandos a seguir:
+SELECT DATE(payment_date) FROM sakila.payment; -- YYYY-MM-DD
+SELECT YEAR(payment_date) FROM sakila.payment; -- Ano
+SELECT MONTH(payment_date) FROM sakila.payment; -- Mês
+SELECT DAY(payment_date) FROM sakila.payment; -- Dia
+SELECT HOUR(payment_date) FROM sakila.payment; -- Hora
+SELECT MINUTE(payment_date) FROM sakila.payment; -- Minuto
+SELECT SECOND(payment_date) FROM sakila.payment; -- Segundo
+
+-- Atividade final de fixação
+-- Quantos pagamentos temos com a data de retorno 2005-05-25 ? Há múltiplas maneiras possíveis de encontrar a resposta.
+SELECT payment_date FROM sakila.payment
+WHERE DATE(payment_date) = '2005/05/25';
+-- Quantos pagamentos foram feitos entre 01/07/2005 e 22/08/2005 ?
+SELECT payment_date FROM sakila.payment
+WHERE DATE(payment_date) BETWEEN '2005/07/01' AND '2005/08/22';
+-- Usando a tabela rental , extraia data, ano, mês, dia, hora, minuto e segundo dos registros com rental_id = 10330. Utilize a coluna rental_date para extrair as informações.
+SELECT CONCAT(
+DATE(rental_date),
+' ',
+DAY(rental_date),
+' ',
+MONTH(rental_date),
+' ',
+YEAR(rental_date),
+' ',
+TIME(rental_date),
+' ',
+MINUTE(rental_date),
+' ',
+SECOND(rental_date)
+) AS 'Specific Infos' FROM sakila.rental
+WHERE rental_id = 10330;
+-- Monte uma query que retorne todos os dados do pagamento feito no dia 28/07/2005 a partir das 22 horas.
+SELECT * FROM sakila.payment
+WHERE DATE(payment_date) = '2005/07/28'
+AND HOUR(payment_date) >= 22;
