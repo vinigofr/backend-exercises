@@ -117,4 +117,49 @@ AND description LIKE '%sumo%';
 ----------------------------------------------------------------------------
 
 -- Englobando uma faixa de resultados com IN e BETWEEN
--- Operador IN:
+-- Operador IN: Um OR e AND melhorados.
+-- Exemplo:
+SELECT * FROM sakila.actor
+WHERE first_name IN ('PENELOPE','NICK','ED','JENNIFER');
+-- O mesmo procedimento funciona para números.
+SELECT * FROM sakila.customer
+WHERE customer_id in (1, 2, 3, 4, 5);
+
+-- Operador BETWEEN - Uma outra opção quando queremos trabalhar com faixas de resultados é o BETWEEN.
+-- Torna possível fazer pesquisas dentro de uma faixa inicial e final.
+-- Ex: 1 a 1000 ou A à Z;
+(expressão BETWEEN valor1 AND valor2);
+-- Então, quando você faz uma query como essa, você terá o resultado da imagem a seguir:
+SELECT title, length FROM sakila.film
+WHERE length BETWEEN 50 AND 120;
+-- Para encontrar uma faixa de valores em que os valores são strings
+SELECT * FROM sakila.language
+WHERE name BETWEEN 'Italian' AND 'Mandarin'
+ORDER BY name;
+-- Usando o BETWEEN com datas (LEMBRANDO DO PADRÃO YYYY-MM-DD)
+SELECT rental_id, rental_date FROM sakila.rental
+WHERE rental_date
+BETWEEN '2005-05-27' AND '2005-07-17';
+
+-- A melhor forma de você não chutar é clicar no botão Execution Plan no MySQL
+-- Workbench e verificar o tempo de execução para tomar a decisão de qual tem o
+-- menor custo de execução - o que significa que a query finalizará mais rápido.
+--
+-- Exercício de fixação IN e BETWEEN usando sakila;
+-- Mostre o nome, sobrenome e e-mail dos clientes com os seguintes sobrenomes: hicks, crawford, henry, boyd, mason, morales e kennedy , ordenados por nome em ordem alfabética.
+SELECT `last_name`, last_name, email FROM sakila.customer
+WHERE last_name IN ('hicks', 'crawford', 'henry', 'boyd', 'mason', 'morales', 'kennedy')
+ORDER BY last_name;
+-- Mostre o e-mail dos clientes com os address_id 172, 173, 174, 175 e 176 , ordenados em ordem alfabética.
+SELECT email FROM sakila.customer
+WHERE address_id BETWEEN 172 AND 173
+ORDER BY first_name;
+-- Descubra quantos pagamentos foram feitos entre 01/05/2005 e 01/08/2005.
+SELECT payment_date FROM sakila.payment
+WHERE payment_date BETWEEN '2005/05/01' AND '2005/08/01';
+-- Mostre o título, ano de lançamento e duração do empréstimo de todos os filmes
+-- com a duração de empréstimo de 3 a 6 . Os resultados devem ser classificados em
+-- filmes com maior duração de empréstimo primeiro. Em caso de empate, ordene em ordem
+-- alfabética pelo título.
+SELECT title, release_year, rental_duration FROM sakila.film
+WHERE rental_duration BETWEEN 3 AND 6;
