@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS escola.alunos (
     `Idade` INT
 );
 
-INSERT INTO escola.alunos VALUES
+ INTO escola.alunos VALUES
 	('Rafael', 25),
     ('Amanda', 30),
     ('Roberto', 45),
