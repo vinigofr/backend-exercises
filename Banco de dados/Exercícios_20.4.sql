@@ -184,3 +184,61 @@ SET rental_rate = (
     WHEN LENGTH > 100 THEN 20
     ELSE rental_rate
     END);
+
+-- Agora, vamos aprender a manipular tabelas usando o DELETE!
+
+-- Excluindo de forma básica:
+DELETE FROM banco_de_dados.tabela
+WHERE coluna = 'valor';
+-- O WHERE é opcional. Porém, sem ele, todas as linhas da tabela seriam excluídas.
+
+-- Exemplo prático:
+DELETE FROM sakila.film_text
+WHERE title = 'ACADEMY DINOSAUR';
+
+-- Restrição / Restrições com o DELETE
+-- Caso haja relações entre as tabelas ( primary key e foreign keys ) e 
+-- existam restrições aplicadas a elas, ao executar o DELETE ocorrerá 
+-- uma ação de acordo com a restrição que tiver sido imposta na criação 
+-- da foreign key . Essas restrições podem ser as seguintes:
+
+-- Rejeita o comando DELETE.
+ON DELETE NO ACTION;
+
+-- Rejeita o comando DELETE.
+ON DELETE RESTRICT;
+
+-- Permite a exclusão dos registros da tabela pai, e seta para NULL os registros da tabela filho.
+ON DELETE SET NULL;
+
+-- Exclui a informação da tabela pai e registros relacionados.
+ON DELETE CASCADE;
+
+-- Vamos analisar um exemplo prático:
+DELETE FROM sakila.actor
+WHERE first_name = 'GRACE';
+-- Se tentar rodar essa query , você vai se deparar com o erro exibido: Erro ON DELETE RESTRICT
+
+-- O banco de dados não vai permitir que você delete o ator chamado "GRACE". 
+-- Isso acontece porque a coluna actor_id da tabela film_actor é uma chave 
+-- estrangeira ( foreign key ) que aponta para a coluna actor_id na tabela actor 
+-- , e essa chave estrangeira possui a restrição ON DELETE RESTRICT . Se essa 
+-- restrição não existisse, o ator seria deletado, deixando nosso banco de dados 
+-- em um estado inconsistente, pois haveria linhas na tabela film_actor com um 
+-- actor_id que não mais existiria! Para conseguir excluir este ator em actors , 
+-- precisamos primeiro excluir todas as referências a ele na tabela sakila.film_actor :
+
+DELETE FROM sakila.film_actor
+WHERE actor_id = 7; -- actor_id = 7 é o Id de GRACE
+
+-- Após excluir as referências, podemos excluir o ator com o nome "GRACE":
+DELETE FROM sakila.actor
+WHERE first_name = 'GRACE';
+
+-- Diferença de DELETE vs TRUNCATE
+-- TRUNCATE: Sem possiblidade de regras condicionais, possibilitando apenas apagar
+-- uma tabela por completo, sem deixar "rastros". Cenário TRUNCATE:
+TRUNCATE banco_de_dados.tabela;
+
+-- DELETE: Permite condicionais de exclusão de locais mais específicos.
+-- Famoso DELETE com WHERE
