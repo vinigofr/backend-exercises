@@ -256,7 +256,7 @@ FROM sakila.customer AS tabela_externa;
 -- O SELETE com WHERE irá otimizar o processamento, pois irá buscar apenas as linhas que atendem ao filtro.
 
 -- Usando o EXISTS para criação de queries mais dinâmicas.
--- Retorna dados de uma tabela T1 onde existe relacionamento com uma tabela T2.
+-- Retorna dados de uma tabela T1 onde existe relacionamento com uma tabela T2. 
 -- O EXISTS espera uma SUBQUERY como parâmetro.
 
 -- 1. Usando o EXISTS na tabela books_lent e books , exiba o id e título dos livros que ainda não foram emprestados.
