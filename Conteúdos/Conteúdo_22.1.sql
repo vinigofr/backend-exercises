@@ -66,3 +66,12 @@ CREATE TABLE nome (
 
 -- Na linha 60, passamos como parâmetro para o CONSTRAINT PRIMARY KEY duas colunas. Se for passado apenas uma
 -- será retornado um erro, devido à primeira coluna não poder receber dados duplicados.
+
+-- Sintaxe para fazer referências de chaves estrangeiras:
+ CREATE TABLE filme_ator(
+        AtorId INTEGER,
+        FilmeId INTEGER,
+        CONSTRAINT PRIMARY KEY(AtorId, FilmeId),
+        FOREIGN KEY (AtorId) REFERENCES Actor (Atorid),
+        FOREIGN KEY (FilmeId) REFERENCES Filme (Filmeid)
+    );

@@ -59,3 +59,73 @@ SELECT * FROM top_10_customers;
 DROP VIEW nome_da_view;
 
 -- Conteúdo sobre ALTER TABLE
+-- Tabela usada como referência para os exemplo:
+USE sakila;
+CREATE TABLE noticia(
+    noticia_id INT PRIMARY KEY,
+    titulo VARCHAR(100),
+    historia VARCHAR(300)
+) engine = InnoDB;
+
+-- Adicionar uma nova coluna
+ALTER TABLE noticia ADD COLUMN data_postagem date NOT NULL;
+
+-- Modificar o tipo e propriedades de uma coluna
+ALTER TABLE noticia MODIFY noticia_id BIGINT;
+
+-- Adicionar incremento automático a uma coluna
+-- (especifique o tipo da coluna + auto_increment)
+ALTER TABLE noticia MODIFY noticia_id BIGINT auto_increment;
+
+-- Alterar o tipo e nome de uma coluna
+ALTER TABLE noticia CHANGE historia conteudo_postagem VARCHAR(1000) NOT NULL;
+
+-- Dropar/Excluir uma coluna
+ALTER TABLE noticia DROP COLUMN data_postagem;
+
+-- Adicionar uma nova coluna após outra
+ALTER TABLE noticia ADD COLUMN data_postagem DATETIME NOT NULL AFTER titulo;
+
+-- DROPando uma tabela
+DROP TABLE nome_da_tabela; -- Para excluir uma tabela existente
+
+-- PONTO IMPORTANTE:
+-- Você não conseguirá dropar (excluir) uma tabela que é referenciada por uma
+-- restrição de chave estrangeira. A chave estrangeira ou a tabela que a contém
+-- deve ser excluída antes.
+
+-- Ao executar o comando, você verá que ele não funciona, retornando a seguinte mensagem de erro:
+-- Cannot drop table 'language' referenced by a foreign key constraint 'fk_film_language' on table 'film'
+-- Isso acontece em função de as informações da tabela language serem utilizadas na tabela film . Caso tente
+-- dropar a tabela film , você perceberá que ela também possui restrições. Essas restrições estão relacionadas ao
+-- conceito de integridade referencial , que deve ser considerado quando se cria um banco de dados. Elas têm o 
+-- intuito de evitar que tabelas sejam excluídas acidentalmente.
+-- Integridade referencial : Propriedade que afirma que todas as referências de chaves estrangeiras devem ser válidas.
+
+-- Sobre INDEX
+-- FULLTEXT INDEX:  são usados para busca nos textos baseados na coluna, ou o nome da própria colula.
+-- INDEX: Somente para números.
+-- UNIQUE INDEX: 
+-- É uma maneira de estruturar o banco de dados, permitindo que você acesse rapidamente
+-- Há três mandeiras de atribuir índices.
+
+-- Criando um índice em uma coluna
+CREATE [INDEX | FULLTEXT INDEX | UNIQUE INDEX] nome_indice ON tabela (coluna);
+
+-- Criando um índice composto, em duas ou mais colunas
+CREATE [INDEX | FULLTEXT INDEX | UNIQUE INDEX] nome_indice ON tabela (coluna1, coluna2);
+
+-- Excluindo índices
+DROP INDEX nome_do_indice ON tabela;
+
+-- Também é possível criar índices no momento em que a tabela é criada
+-- EX:
+CREATE TABLE nome_da_tabela (
+    coluna1 INT,
+    coluna2 INT,
+    INDEX (coluna1, coluna2)
+) engine = InnoDB;
+
+-- Também é possível criar índices na alteração da tabela.
+-- EX:
+ALTER TABLE nome_da_tabela ADD INDEX (coluna1, coluna2);
