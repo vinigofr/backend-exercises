@@ -1,0 +1,61 @@
+// Operações com filtros e operadores lógicos em MongoDB.
+
+// Alguns métodos utilizados para comparação:
+// Utilizar os operadores de comparação
+// $lt ( less than , menor que, <)
+db.inventory.find({ qty: { $lt: 20 } })
+// $lte ( less than or equal , menor ou igual a, <=)
+db.inventory.find({ qty: { $lte: 20 } })
+// $gt ( greater than , maior que, >)
+db.inventory.find({ qty: { $gt: 20 } })
+// $gte ( greater than or equal , maior ou igual a, >=)
+db.inventory.find({ qty: { $gte: 20 } })
+// $eq ( equal , igual a, =)
+db.inventory.find({ qty: { $eq: 20 } })
+db.inventory.find({ qty: 20 })
+// $ne ( not equal , diferente de, !=, <>)
+db.inventory.find({ qty: { $ne: 20 } })
+// $in ( in , dentro de)
+db.inventory.find({ qty: { $in: [ 5, 15 ] } })
+// $nin ( not in , não está dentro de)
+db.inventory.find( { qty: { $nin: [ 5, 15 ] } } )
+
+// Utilizar os operadores lógicos
+// $and ( and , se todas as condições forem verdadeiras retorna true )
+{ $and: [{ <expressão1> }, { <expressão2> } , ... , { <expressãoN> }] }
+db.inventory.find({
+  $and: [
+      { price: { $ne: 1.99 } },
+      { price: { $exists: true } }
+  ]
+})
+// $or ( or , se apenas uma condição for verdadeira retorna true )
+db.inventory.find({ $or: [{ qty: { $lt: 20 } }, { price: 10 }] })
+
+// Compor filtros avançados com
+// $not ( not , inverte o resultado da expressão)
+db.inventory.find({ price: { $not: { $gt: 1.99 } } })
+// $nor ( not or , semelhante ao or , porém trabalha com a condição false )
+db.inventory.find({ $nor: [{ price: 1.99 }, { sale: true }] })
+// Utilizar o operador
+// $exists ( exists , verifica a existência de um atributo)
+// { campo: { $exists: <boolean> } }
+{/* db.inventory.find({ qty: { $exists: true } }) */}
+
+// Utilizando múltiplas expressões em uma mesma consulta:
+db.inventory.find({
+  and:
+  [
+    { price: { $gt: 0.99, $lt: 1.99 } },
+    {
+      or: [
+        { sale : true },
+        { qty : { $lt : 20 } }
+      ]
+    }
+  ]
+})
+
+// Utilizar o método
+// sort() ( sort , ordenar)
+db.restaurants.find().sort( { "borough": 1 } )

@@ -1,0 +1,222 @@
+// Depois de entender e praticar bastante como inserir e buscar dados no MongoDB , você vai aprender como alterar esses dados através dos métodos e operadores disponíveis para isso.
+
+// Utilizar o método updateOne() ;
+db.colecao.updateOne(<filtro>, <update>, <opcoes>);
+// Exemplo:
+db.inventory.updateOne(
+  { item: "paper" },
+  { $set: { "size.uom": "cm", status: "P" } }
+);
+// Chamando o método db.colecao.updateOne() com o parâmetro de filtro vazio { } , o resultado é a atualização do primeiro documento presente em colecao.
+
+// Utilizar o método updateMany();
+// O método db.colecao.updateMany() permite que vários documentos que satisfaçam o critério de filtro sejam alterados de uma única vez.
+db.colecao.updateMany(<filtro>, <update>, <opcoes>).
+
+// O exemplo baixo busca por todos os documentos que contenham o campo "qty" menor que 50.
+// Logo depois, ele atualiza os dados especificados no segundo parâmetro do método updateMany().
+db.inventory.updateMany(
+  { "qty": { $lt: 50 } },
+  { $set: { "size.uom": "in", status: "P" } }
+);
+//  Chamando o método db.colecao.updateMany() com o parâmetro de filtro vazio { } , o resultado é a atualização de todos os documentos presentes em colecao . ⚠️
+
+// Utilizar os operadores:
+// $set
+// Atualiza valores especificafos. Caso o campo a ser atualizado não exista, um novo é criado.
+// Se dot_notation for usado no momento, a criação do mesmo também é efetivada.
+
+// Exemplo de alteração 1:
+db.products.update(
+  { _id: 100 },
+  { $set: {
+      quantity: 500,
+      details: { model: "14Q3", make: "xyz" },
+      tags: [ "coats", "outerwear", "clothing" ]
+    }
+  }
+);
+
+
+// Exemplo de alteração 2:
+// Utilizando dot_notation:
+db.products.update(
+  { _id: 100 },
+  { $set: { "details.make": "zzz" } }
+);
+
+// Exemplo de alteração 3:
+// Atualizando arrays:
+// A utilização do dot_notation é essencial para acessar
+// as posições de arrays.
+db.products.update(
+  { _id: 100 },
+  { $set: {
+      "tags.1": "rain gear",
+      "ratings.0.rating": 2
+    }
+  }
+);
+
+// $mul
+// O operador $mul multiplica o valor de um campo por um número especificado, persistindo o resultado dessa operação sem a necessidade do operador $set.
+// Ou seja, ele modifica a informação:
+db.products.update(
+  { _id: 1 },
+  { $mul: { price: NumberDecimal("1.25"), qty: 2 } }
+);
+
+// Inserindo campos inexistentes:
+// Criando o dado:
+db.products.insertOne(
+  { _id: 2, item: "Unknown" }
+);
+
+// Adicionando um campo novo:
+db.products.update(
+  { _id: 2 },
+  { $mul: { price: NumberLong("100") } }
+);
+
+// Há também como multiplicar aproveitando o valor de um campo existente:
+db.products.update(
+  { _id: 3 },
+  { $mul: { price: NumberInt(5) } }
+);
+
+// Se o valor do campo price for 10, a multiplicação acima retornará 50 como resultado.
+
+//  $inc: Com o operador $inc , você pode incrementar ou decrementar valores em um campo específico, utilizando tanto valores positivos quanto negativos.
+
+// Na operação de update a seguir, o operador $inc é utilizado para decrementar o valor do campo qty em 2 (incrementa em -2 ) e incrementar o valor do campo metrics.orders em 1 :
+db.increment.update(
+  { sku: "abc123" },
+  { $inc: { quantity: -2, "metrics.orders": 1 } }
+);
+// OU seja, o $inc é utilizado tanto para incrementar quanto para decrementar.
+// Basta usar o operador - para decrementar o valor do campo.
+
+// $min e $max
+// $max : faz o mesmo, porém altera o valor do campo se o valor especificado é maior do que o atual valor do campo
+// Considerando o seguinte resultado
+[ 
+  { _id: 1, campo: 25 },
+  { _id: 2, campo: 50 },
+  { _id: 3, campo: 100 }
+]
+
+// Fazendo o seguinte update:
+db.collection.updateMany({}, { $max: { campo: 75 } });
+// Atualizando todos os valores do atributo "campo"
+// para 75 caso sejam menores
+
+// O retorno será:
+[
+  { _id: 1, campo: 75 }, // valor anterior: 25
+  { _id: 2, campo: 75 }, // valor anterior: 50
+  { _id: 3, campo: 100 }, // não encontrou no escopo
+]
+
+// $min : altera o valor do campo para o valor especificado se esse valor especificado é menor do que o atual valor do campo.
+// Com o $min, a situação acontece inversamente.
+// Considerando a seguinte query:
+db.collection.updateMany({}, { $min: { campo: 42 } });
+// Atualizando todos os valores do atributo "campo"
+// para 42 caso sejam maiores
+
+// O retorno será:
+[
+  { _id: 1, campo: 42 }, // valor anterior: 75
+  { _id: 2, campo: 42 }, // valor anterior: 75
+  { _id: 3, campo: 42 }, // valor anterior: 100
+]
+
+// O mesmo pode ser feito com datas:
+Considerando a adição do seguinte documento:
+use conteudo_trybe;
+db.tags.insertOne(
+  {
+    _id: 1,
+    desc: "crafts",
+    dateEntered: ISODate("2019-10-01T05:00:00Z"),
+    dateExpired: ISODate("2019-10-01T16:38:16Z")
+  }
+);
+
+// A atualização pode ser feita com o seguinte comando:
+db.tags.update(
+  { _id: 1 },
+  {
+min: { dateEntered: new Date("2019-09-25") },
+max: { dateExpired: new Date("2019-10-02") }
+  }
+);
+
+// $currentDate;
+// O operador $currentDate atualiza o valor de um campo com a data atual.
+// Este operador tem o seguinte formato:
+{$currentDate: { <campo>: <typeSpecification>, ... }}
+
+// typeSpecification pode ser:
+// um valor booleano true para atribuir o valor da data corrente ao campo utilizando o tipo Date ; ou
+// um documento que especifica o tipo do campo. Esse documento pode ser { $type: "timestamp" } ou { $type: "date" } . Esse operador é case-sensitive e aceita somente letras minúsculas: timestamp ou date .
+
+// Com a operação abaixo, é possível alterar o valor do campo lastModified para a data corrente e criar o campo cancellation.date com o timestamp corrente, utilizando o operador $currentDate , e ainda alterar o campo status para D e criar o campo cancellation.reason com o valor "user request" , utilizando o operador $set :
+
+db.customers.updateOne(
+  { _id: 1 },
+  { $currentDate: {
+      lastModified: true,
+      "cancellation.date": { $type: "timestamp" }
+    }, $set: {
+      "cancellation.reason": "user request",
+      status: "D"
+    }
+  }
+);
+
+// O resultado parecerá assim:
+{
+  "_id": 1,
+  "status": "D",
+  "lastModified": ISODate("2020-01-22T21:21:41.052Z"),
+  "cancellation": {
+    "date": Timestamp(1579728101, 1),
+    "reason": "user request"
+  }
+}
+
+// Renomear campos;
+db.fruits.updateOne(
+  { name: "Banana" },
+  { $rename: {
+      "name": "productName"
+    }
+  }
+);
+
+
+// Agora o documento tem a seguinte estrutura:
+{ _id: 100, quantity: 100, inStock: true, productName: 'Banana' }
+
+// Remover campos.
+// Dado:
+{
+  _id: 100,
+  productName: "Banana",
+  quantity: 100,
+  inStock: true
+}
+
+// Query
+db.fruits.updateMany(
+  { productName: "Banana" },
+  { $unset: { quantity: "" } }
+);
+
+// Resultado:
+{
+  _id: 100,
+  productName: "Banana",
+  inStock: true
+}
