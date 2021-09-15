@@ -1,0 +1,179 @@
+use ('test');
+
+db.movies.find();
+
+// Ex 1:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $push: {
+      category: "superhero"
+    }
+  }
+);
+
+// Ex 2:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $push: {
+      category: {
+        $each: ['villain', 'comic-based']
+      }
+    }
+  }
+);
+
+// Ex 3:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $pull: {
+      category: {
+        $in: ['action']
+      }
+    }
+  }
+);
+
+// Ex 4:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $pop: { category: -1 }
+  }
+);
+// Ex 5:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $pop: { category: 1 }
+  }
+);
+
+// Ex 6: 
+db.movies.updateOne(
+  { title: "Batman"},
+  {
+    $addToSet: {
+      category: "action"
+    }
+  }
+);
+
+// Ex 7:
+db.movies.updateMany(
+  { title: { $in: ['Batman', 'Home Alone'] } },
+  {
+    $push: {
+      category: "90's"
+    }
+  }
+);
+
+// Ex 8:
+db.movies.updateOne(
+  { title: "Home Alone" },
+  {
+    $push: {
+      cast: {
+        $each: [
+          {
+            "actor": "Macaulay Culkin",
+            "character": "Kevin"
+          },
+          {
+            "actor": "Joe Pesci",
+            "character": "Harry"
+          },
+          {
+            "actor": "Daniel Stern"
+          }
+        ]
+      }
+    }
+  },
+  { upsert: true }
+);
+
+// Ex 9:
+db.movies.updateOne(
+  { title: "Home Alone" },
+  {
+    $set: {
+      "cast.$[e].character": "Marv"
+    }
+  },
+  { arrayFilters: [{"e.actor": "Daniel Stern"}]}
+);
+
+// Ex 10:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $push: {
+      cast: {
+        $each: [
+          {
+            "character": "Batman"
+          },
+          {
+            "character": "Alfred"
+          },
+          {
+            "character": "Coringa"
+          }
+        ]
+      }
+    }
+  },
+  { upsert: true }
+);
+
+// Ex 11:
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $set: {
+      "cast.$[e].actor": ["Christian Bale"]
+    }
+  },
+  { arrayFilters: [ { "e.character": "Batman" } ] }
+);
+
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $set: {
+      "cast.$[e].actor": ["Michael Caine"]
+    }
+  },
+  { arrayFilters: [ { "e.character": "Alfred" } ] }
+);
+
+db.movies.updateOne(
+  { title: "Batman" },
+  {
+    $set: {
+      "cast.$[e].actor": ["Heath Ledger"]
+    }
+  },
+  { arrayFilters: [ { "e.character": "Coringa" } ] }
+);
+
+// Ex 12:
+// https://docs.mongodb.com/manual/reference/operator/update/positional/
+db.movies.update(
+  { title: "Batman", "cast.character": "Batman"}, 
+  {
+    $push: {
+      "cast.$.actor": {
+        $each: [
+          "Michael Keaton",
+          "Val Kilmer",
+          "George Clooney"
+        ]
+      }
+    }
+  }
+);
