@@ -1,0 +1,128 @@
+// Utilizar o operador $all para filtrar documentos;
+// 1. Seleciona todos os campos em que o valor é um array que contenha os dados especificados.
+// 2. É equivalente ao $and pois fará a mesma coisa, só que para arrays.
+// 3. Utilizado sempre que é preciso passar mais de um valor de comparação,.
+// 4. A quantidade e ordenação dos itens do array não importa
+// Ex:
+db.inventory.find({ tags: ["red", "blank"] });
+
+db.inventory.find({ tags: { $all: ["red", "blank"] } });
+// A primeira query retorna os documentos em que o array seja exatamente igual ao passado como parâmetro no filtro, ou seja, contenha apenas esses dois elementos, na mesma ordem.
+// Já a segunda analisará o mesmo array , independentemente da existência de outros valores ou a ordem em que os elementos estejam.
+
+// O operador $elemMatch seleciona os documentos que contêm um campo do tipo array
+// com pelo menos UM elemento que satisfaça TODOS os critérios.
+// Exemplo de uso:
+{ _id: 1, results: [82, 85, 88] },
+{ _id: 2, results: [75, 88, 89] }
+db.scores.find(
+  { results: { $elemMatch: { $gte: 80, $lt: 85 } } }
+);
+
+// Encontrando subdocumentos, onde por exemplo, o array é um array de objetos:
+{
+  _id: 1,
+  results: [
+    { product: "abc", score: 10 },
+    { product: "xyz", score: 5 }
+  ]
+},
+
+db.survey.find(
+  { results: { $elemMatch: { product: "xyz", score: { $gte: 8 } } } }
+);
+
+// Você não precisa utilizar o operador $elemMatch se estiver utilizando uma condição para apenas "um" campo do documento embedado.
+db.survey.find(
+  { results: { $elemMatch: { product: "xyz" } } }
+);
+
+// Podendo usar dessa forma:
+db.survey.find(
+  { "results.product": "xyz" }
+);
+
+
+// O $size para filtrar documentos pelo tamanho de arrays, sintaxe simples
+db.products.find(
+  { tags: { $size: 2 } }
+);
+// $size: não aceita condicionais como por exemplo $gte.
+
+// Utilizar o operador $expr para criar expressões de agregação;
+// O $expr abrange muitas possibilidades de agregação:
+// Um exemplo, utilizando $gt:
+// Dados:
+{ _id: 1, category: "food", budget: 400, spent: 450 },
+{ _id: 2, category: "drinks", budget: 100, spent: 150 },
+{ _id: 3, category: "clothes", budget: 100, spent: 50 },
+{ _id: 4, category: "misc", budget: 500, spent: 300 },
+{ _id: 5, category: "travel", budget: 200, spent: 650 }
+
+// Query:
+db.monthlyBudget.find(
+  {
+    $expr: { $gt: [ "$spent", "$budget" ] }
+  }
+);
+
+// Resultado:
+{ "_id" : 1, "category" : "food", "budget" : 400, "spent" : 450 }
+{ "_id" : 2, "category" : "drinks", "budget" : 100, "spent" : 150 }
+{ "_id" : 5, "category" : "travel", "budget" : 200, "spent" : 650 }
+//  O que acontece é que o operador $expr entende que deve comparar os valores dos dois campos. Por isso o $ é utilizado, indicando que a string entre aspas referencia um campo.
+
+// Utilizar expressões regulares e o operador $regex para buscar documentos;
+// Sintaxe:
+// /789$/ termina com 789
+// /^ABC/i começa com e ignora CASE SENSITIVE
+db.products.find({ sku: { $regex: /789$/ } });
+
+// Utilizar o índice textual e o operador $text.
+// O operador $text faz uma busca "textual" em um campo indexado por um text index. A expressão para utilizar o $text tem a seguinte sintaxe:
+{
+  $text:
+    {
+      $search: <string>,
+      $language: <string>,
+      $caseSensitive: <boolean>,
+      $diacriticSensitive: <boolean>
+    }
+}
+
+/** $search: Uma string com os termos que o MongoDB utilizará para fazer o parse e utilizará como filtro.
+Internamente, o MongoDB faz uma busca lógica ( OR ) sobre os termos, a menos que seja especificado como uma frase inteira; */
+
+/** $language : Opcional. Esse campo determina a lista de stop words que será utilizada na tokenização da busca. Veja a lista de idiomas suportados. Se você passar o valor none, a busca utilizará uma tokenização simples sem utilizar nenhuma lista de stop words;
+Stop word: Também conhecido como palavra vazia, é uma palavra que é removida antes ou após o processamento de um texto em linguagem natural.*/
+
+/** $caseSensitive: Opcional. Recebe um valor booleano para habilitar ou desabilitar buscas case sensitive. O valor default é false, o que faz com que as buscas sejam case-insensitive. */ 
+
+/** $diacriticSensitive: Opcional. Recebe um valor booleano para habilitar ou desabilitar busca diacritic sensitive. O valor default também é false. */
+
+
+// Exemplos:
+// A query abaixo utiliza os operadores $text e $search para buscar todos os documentos que contenham o termo coffee:
+db.articles.find({ $text: { $search: "coffee" } });
+
+// Procurando por termos esecíficos:
+db.articles.find({ $text: { $search: "bake coffee cake" } });
+// O espaço serve como uma espécie de OR
+
+// Frases exatas:
+db.articles.find({ $text: { $search: "\"coffee shop\"" } });
+
+// O operador $mod seleciona todos os documentos em que o valor do campo dividido por um divisor seja igual ao valor especificado.
+// Ele se basei no resto de divisão.
+
+// Considerando os seguintes dados:
+{ _id: 1, item: "abc123", qty: 0 },
+{ _id: 2, item: "xyz123", qty: 5 },
+{ _id: 3, item: "ijk123", qty: 12 }
+
+// A query a seguir seleciona todos os documentos da coleção em que o valor do campo qty módulo 4 seja 0:
+db.inventory.find({ qty: { $mod: [4, 0] } });
+
+// Resultado:
+{ "_id" : 1, "item" : "abc123", "qty" : 0 }
+{ "_id" : 3, "item" : "ijk123", "qty" : 12 }

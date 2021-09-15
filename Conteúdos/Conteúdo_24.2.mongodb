@@ -250,3 +250,4 @@ db.inventory.updateOne(
 
 
 // Alterando itens sem saber o index de um elemento do array.
+// Exercício 9 e 11 do dia 24.2 ensinam como usar esse operador.
