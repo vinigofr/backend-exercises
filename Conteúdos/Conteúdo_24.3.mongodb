@@ -64,7 +64,7 @@ db.monthlyBudget.find(
   {
     $expr: { $gt: [ "$spent", "$budget" ] }
   }
-);
+); 
 
 // Resultado:
 { "_id" : 1, "category" : "food", "budget" : 400, "spent" : 450 }

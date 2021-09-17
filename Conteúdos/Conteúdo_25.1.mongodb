@@ -1,0 +1,384 @@
+// Ebaa! O conteúdo de hoje é sobre Aggregation Framework.
+// Ele foi modelado no cenceito de pepiline, ou funil
+
+// Considerando a seguinte query>
+db.orders.aggregate([
+  { $match: { status: "A" } },
+  { $group: { _id: "$cust_id", total: { $sum: "$amount" } } }
+]);
+
+// Essa operação possui dois estágios:
+// Primeiro Estágio : O estágio $match filtra os documentos pelo campo status , e passam para o próximo estágio somente os documentos que têm status igual a "A" .
+// Segundo Estágio : O estágio $group agrupa os documentos pelo campo cust_id para calcular a soma dos valores do campo amount para cada cust_id único.
+// O .aggregate recebe como primeiro parâmetro um array de de documentos (objetos).
+// Esses documentos recebem o nome de estágios.
+
+// Filtrar documentos com o estágio $match;
+// O estágio representado pelo operador $match filtra os documentos da mesma maneira que os filtros no método find({ $match }).
+// Ex:
+// É recomendado seu primeiro uso, pois ele já filtra uma pá de dados, slk.
+db.example.aggregate(
+  [
+    { 
+      $match: {
+        score: { $lt: 10 }
+      }
+    }
+  ]
+);
+
+// Outro exemplo mais completo
+db.articles.aggregate(
+  [
+    {
+      $match: {
+        $or: [
+          { score: { $gt: 70, $lt: 90 } },
+          { views: { $gte: 1000 } }
+        ]
+      }
+    }
+  ]
+);
+
+//O operador $limit limite a quantidade de documentos que passarão para o
+// próximo estágio do funil.
+// Ele sempre recebe um valor do tipo inteiro e positivo.
+db.articles.aggregate(
+  [
+    { $limit : 5 }
+  ]
+);
+
+// Exemplos usando $limit:
+use ('agg_example');
+db.transactions.aggregate(
+  [
+    {
+      $match: {
+        to: "Lisa Simpson",
+        value: { $gte: 600, $lte: 6000 }
+        }
+    },
+    { $limit: 3 } // limitando em três
+  ]);
+
+// Controlar a exibição de campos com o $project.
+// Basicamente, é como se fosse um _id: 0, nome: 1, sobrenomde: 1...
+Porém, a sintaxe é:
+db.example.aggregate([
+  {
+    $project: {
+      _id: 0,
+      nome: 1,
+      sobrenome: 1,
+    }
+  }
+]);
+
+// Há também a possibilidade de excluir subdocumentos.
+// Como no exemplo a seguir:
+db.books.aggregate([
+  {
+    $project : {
+      "author.first": 0,
+      copies: 0
+    }
+  }
+]);
+
+// Incluindo campos calculados
+// Podemos usar uma string iniciada com o caractere $ para indicar que queremos projetar um campo, assim: "$nomeDoCampo".
+// A operação a seguir adiciona os novos campos isbn , lastname e copiesSold :
+db.books.aggregate([
+  {
+    $project: {
+      title: 1,
+      isbn: {
+        prefix: { $substr: ["$isbn", 0, 3] },
+        group: { $substr: ["$isbn", 3, 2] },
+        publisher: { $substr: ["$isbn", 5, 4] },
+        title: { $substr: ["$isbn", 9, 3] },
+        checkDigit: { $substr: ["$isbn", 12, 1] }
+      },
+      lastName: "$author.last",
+      copiesSold: "$copies"
+    }
+  }
+]);
+
+  // Depois disso, o documento terá o seguinte formato:
+
+{
+  "_id" : 1,
+  "title" : "A Fundação",
+  "isbn" : {
+    "prefix" : "000",
+    "group" : "11",
+    "publisher" : "2222",
+    "title" : "333",
+    "checkDigit" : "4"
+  },
+  "lastName" : "Asimov",
+  "copiesSold" : 5
+}
+// Lembre-se: esses novos campos são apenas adicionados para a visualização final, não serão salvos no banco.
+// Assim, somente os campos exigidos aparecerão.
+
+
+// Fazer agrupamentos com o $group;
+
+// O principal parâmetro do $group é o _id (que não tem nada a ver com o campo _id das coleções). Neste caso, ele é responsável por conter o campo ou os campos que serão utilizados no agrupamento.
+// Nesse parâmetro _id, serão contidos os campos que serão agrupados.
+
+// Para fazer operações sobre os campos de documentos agrupados usamos operadores de acumulação.
+// A seguir há uma lista com alguns dos mais utilizados:
+// $addToSet : retorna um array com os valores únicos da expressão para cada grupo;
+// $avg : retorna a média de valores numéricos. Valores não numéricos são ignorados;
+// $first : retorna um valor do primeiro documento de cada grupo;
+// $last : retorna um valor do último documento de cada grupo;
+// $max : retorna o maior valor de cada grupo;
+// $sum : retorna a soma de valores numéricos. Valores não numéricos são ignorados.
+
+// Exemplos usando a coleção do course:
+
+// Você pode utilizar o operador $group para contar o número de documentos da coleção sales :
+db.sales.aggregate([
+  {
+    $group: {
+      _id: null,
+      count: { $sum: 1 }
+    }
+  }
+]);
+// db.sales.count(); ou SELECT COUNT(*) AS count FROM sales;
+
+// Note que o _id está setado como null , porque nesse caso queremos todos os documentos. O retorno dessa operação é:
+{ "_id" : null, "count" : 8 }
+
+
+// Retornando valores distintos
+// O operador $group também pode ser utilizado para encontrar os valores distintos de um campo. Por exemplo, se quiser saber todos os valores únicos do campo "item" e quantos são, faça como o exemplo seguinte:
+
+db.sales.aggregate([
+  {
+    $group : {
+      _id : "$item",
+      count: { $sum: 1 }
+    },
+  },
+]);
+
+// Note que o campo deve ser precedido de $ . O resultado da operação é:
+{ "_id" : "A Coragem de Ser Imperfeito", "count" : 2 }
+{ "_id" : "O Homem e Seus Símbolos", "count" : 1 }
+{ "_id" : "Código Limpo", "count" : 3 }
+{ "_id" : "Comunicação Não-Violenta", "count" : 2 }
+
+// Exemplo 3: Somando valores
+// Para saber o valor das vendas, você deve utilizar o operador $sum , que, por sua vez, aceita mais modificadores. No exemplo que se segue, multiplica-se o valor do campo price pelo valor do campo quantity :
+
+db.sales.aggregate([
+  {
+    $group : {
+      _id : "$item",
+      // Aqui é selecionado por qual campo queremos agrupar
+      totalSaleAmount: {
+        $sum: {
+          $multiply: ["$price", "$quantity"]
+        }
+      }
+    }
+  }
+]);
+
+// Retornando os seguintes documentos:
+
+{ "_id" : "A Coragem de Ser Imperfeito", "totalSaleAmount" : NumberDecimal("112.5") }
+{ "_id" : "O Homem e Seus Símbolos", "totalSaleAmount" : NumberDecimal("20") }
+{ "_id" : "Código Limpo", "totalSaleAmount" : NumberDecimal("170") }
+{ "_id" : "Comunicação Não-Violenta", "totalSaleAmount" : NumberDecimal("150") }
+
+// Outro exemplo bacana com $group, usando múltiplos agrupamentos.
+db.voos.aggregate(
+  [
+    {
+      $group: {
+        _id: {
+          "chave": "$valor",
+          "chave2": "$valor2",
+          "chave3": "$valor3",
+        },
+        qty: { $sum: 1 },
+      }
+    }
+  ]
+);
+
+// Exemplo de having do MongoDB:
+db.sales.aggregate([
+  // Primeiro Estágio
+  {
+    $group: {
+      _id : "$item",
+      totalSaleAmount: {
+        $sum: {
+          $multiply: ["$price", "$quantity"]
+        }
+      }
+    }
+  },
+  // Segundo Estágio
+  {
+    $match: { "totalSaleAmount": { $gte: 100 } }
+  }
+]);
+
+// Exemplo 5: Agrupando por null
+// Você pode executar operações matemáticas em todos os documentos de uma coleção. Basta passar null no _id e seguir com os operadores de acumulação.
+// No exemplo a seguir, a operação de agregação retornará um documento com o valor total da venda, a quantidade média de itens vendidos e o total de vendas:
+db.sales.aggregate([
+  {
+    $group : {
+      _id : null,
+      totalSaleAmount: {
+        $sum: { $multiply: ["$price", "$quantity"] }
+      },
+      averageQuantity: { $avg: "$quantity" },
+      count: { $sum: 1 }
+    }
+  }
+]);
+
+
+
+
+
+// Trabalhar com arrays com o $unwind;
+// O operador descontrói um campo de array do documento.
+// Na prática fica mais fácil de entender. Insira o seguinte documento na coleção inventory:
+
+// Adicionando dado:
+db.inventory.insertOne({ _id: 7, item: "ABC1", sizes: ["S", "M", "L"] });
+
+// Query:
+db.inventory.aggregate([{ $unwind : "$sizes" }]);
+
+// Resultado:
+{ "_id" : 7, "item" : "ABC1", "sizes" : "S" }
+{ "_id" : 7, "item" : "ABC1", "sizes" : "M" }
+{ "_id" : 7, "item" : "ABC1", "sizes" : "L" }
+
+// Juntar dados de uma ou mais coleções com o $lookup ;
+// O lookup funciona como se fosse uma espécie de JOIN.
+// O resultado desse junção, um elemento do tipo ARRAY é adidionado
+// a cada documento da coleção de entrada.
+// Nessa array, conterá um dos documentos que deram "match" na coleção
+// no qual se fez o JOIN.
+
+// O $lookup recebe quatro parâmetros.
+// from : uma coleção no mesmo database para executar o join ;
+
+// localField : o campo da coleção de onde a operação de agregação está sendo executada. Será comparado por igualdade com o campo especificado no parâmetro foreingField ;
+
+// foreingField : o campo da coleção especificada no parâmetro from que será comparado com o campo localField por igualdade simples;
+
+// as : o nome do novo array que será adicionado.
+
+// Abaixo alguns exemplos:
+
+// Adicionando os dados.
+db.orders.insertMany([
+{ _id: 1, item: "almonds", price: 12, quantity: 2 },
+{ _id: 2, item: "pecans", price: 20, quantity: 1 },
+{ _id: 3 }
+])
+
+// Adicionando mais dados:
+// inventory
+db.inventory.insertMany([
+{ _id: 1, sku: "almonds", description: "product 1", instock: 120 },
+{ _id: 2, sku: "bread", description: "product 2", instock: 80 },
+{ _id: 3, sku: "cashews", description: "product 3", instock: 60 },
+{ _id: 4, sku: "pecans", description: "product 4", instock: 70 },
+{ _id: 5, sku: null, description: "Incomplete" },
+{ _id: 6 }
+]).
+
+// 1o Passo: Encontrar campos em comum:
+// item (coleção orders) / sku (coleção inventory);
+
+// Quando cruzados na query a seguir, retornará um novo campo chamado inventory_docs:
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "inventory", // De onde está vindo
+      localField: "item", // Campo selecionado do local de origem
+      foreignField: "sku", // Chave estrangeira do local de destino
+      as: "inventory_docs" // Nome do array
+    }
+  }
+]);
+
+// Resultado: ele se baseia no "from" de origem.
+{
+  "_id" : 1,
+  "item" : "almonds",
+  "price" : 12,
+  "quantity" : 2,
+  "inventory_docs" : [
+    {
+      "_id" : 1,
+      "sku" : "almonds",
+      "description" : "product 1",
+      "instock" : 120
+    }
+  ]
+}
+{
+  "_id" : 2,
+  "item" : "pecans",
+  "price" : 20,
+  "quantity" : 1,
+  "inventory_docs" : [
+    {
+      "_id" : 4,
+      "sku" : "pecans",
+      "description" : "product 4",
+      "instock" : 70
+    }
+  ]
+}
+{
+  "_id" : 3,
+  "inventory_docs" : [
+    {
+      "_id" : 5,
+      "sku" : null,
+      "description" : "Incomplete"
+    },
+    {
+      "_id" : 6
+    }
+  ]
+}
+
+// Outro exemplo usando $lookup
+use ('agg_example');
+show collections;
+
+db.transactions.find();
+// campo from 
+// campo name
+
+use ('agg_example');
+db.clients.aggregate([
+  {
+    $lookup: {
+      from: "transactions",
+      localField: "from",
+      foreignField: "name",
+      as: "relacionamento"
+    }
+  }
+]);
