@@ -1,0 +1,530 @@
+// Aplicando condições ao Join com $lookup
+// Tornando possível usar pipelines dentro do $lookup
+
+// Parâmetros extras e opicionais para o $lookup:
+// 1. let: define as variáveis que serão utilizadas no estágio de pipeline do $lookup.
+// Isso é necessário porquê o  estágio não consegue acessar diretamente os campos dos documentos de entrada.
+// Ou seja, estes campos precisam ser definidos previamente e transformado em variáveis.
+
+// 2. pipeline : define as condições ou o pipeline que será executado na coleção de junção. Se você quiser todos os documentos da coleção de junção, é só especificá-lo como vazio ( [] ). 
+
+// Exemplos:
+// Considere os seguintes documentos na coleção orders :
+use ('example_db');
+db.orders.insertMany([
+  { _id: 1, item: "almonds", price: 12, ordered: 2 },
+  { _id: 2, item: "pecans", price: 20, ordered: 1 },
+  { _id: 3, item: "cookies", price: 10, ordered: 60 }
+]);
+
+// E os seguintes documentos na coleção warehouses :
+use ('example_db');
+db.warehouses.insertMany([
+  { _id: 1, stock_item: "almonds", warehouse: "A", instock: 120 },
+  { _id: 2, stock_item: "pecans", warehouse: "A", instock: 80 },
+  { _id: 3, stock_item: "almonds", warehouse: "B", instock: 60 },
+  { _id: 4, stock_item: "cookies", warehouse: "B", instock: 40 },
+  { _id: 5, stock_item: "cookies", warehouse: "A", instock: 80 }
+]);
+
+// Exemplo de uso:
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "warehouses",
+      let: { order_item: "$item", order_qty: "$ordered" },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: [ "$stock_item",  "$$order_item" ] },
+                { $gte: [ "$instock", "$$order_qty" ] }
+              ]
+            }
+          }
+        },
+        { $project: { stock_item: 0, _id: 0 } }
+      ],
+      as: "stockdata"
+    }
+  }
+]);
+
+// Legenda:
+// $match que utiliza uma expressão ( $expr ). Esta, por sua vez, utiliza o operador $and. Dentro do $and, são utilizados operadores de igualdade ( $eq ) e de comparação ( $gte ).
+// O símbolo $ é utilizado para se referir aos campos da coleção warehouse (a coleção de junção).
+// $$ se refere às variáveis definidas no estágio let (os campos da coleção orders ).
+// Os campos _id e stock_item da coleção de join ( warehouse ) são excluídos com o uso do operador $project.
+
+// Exercício de fixação - PARTE I:
+// Selecione todos os clientes com as suas respectivas transações feitas;
+use ('agg_example');
+db.clients.aggregate(
+  [
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: 'name',
+        foreignField: 'from',
+        as: 'compileds',
+        let: { nome: "$name", estado: "$State" },
+        pipeline: [
+          {
+            $project: {
+              from: 1, bank: 1,_id: 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      $unwind: "$compileds"
+    }
+  ]
+);
+
+// Selecione os quatro primeiros clientes com as suas respectivas transações recebidas ordenados pelo estado em ordem alfabética;
+use ('agg_example');
+db.clients.aggregate(
+  [
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: 'name',
+        foreignField: 'from',
+        as: 'compileds'
+      }
+    },
+    {
+      $unwind: "$compileds"
+    },
+    {
+      $sort: {State: 1}
+    },
+    {
+      $limit: 4,
+    }
+  ]
+);
+
+// Selecione todos os cliente do estado da "Florida" e suas respectivas transações recebidas.
+
+use ('agg_example');
+db.clients.aggregate(
+  [
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: 'name',
+        foreignField: 'from',
+        as: 'compileds',
+        pipeline: [
+          {
+            $match: {
+              State: "Florida",
+            }
+          },
+        ]
+      }
+    },
+    {
+      $unwind: "$compileds"
+    },
+    {
+      $sort: {State: 1}
+    },
+    {
+      $limit: 4,
+    }
+  ]
+);
+
+// Expressão $add:
+// Com ele, é possível somar valores numéricos ou datas.
+// Considere os seguintes documentos na coleção sales:
+// 
+
+{ _id: 1, item: "abc", price: 10, fee: 2, date: ISODate("2014-03-01T08:00:00Z") },
+{ _id: 2, item: "jkl", price: 20, fee: 1, date: ISODate("2014-03-01T09:00:00Z") },
+{ _id: 3, item: "xyz", price: 5,  fee: 0, date: ISODate("2014-03-15T09:00:00Z") }
+
+// Utilizando a expressão $add no estágio $project, você pode criar um novo campo com o valor total somando os campos price e fee :
+db.sales.aggregate([
+  { 
+    $project: { item: 1, total: { $add: ["$price", "$fee"] } }
+  }
+]);
+
+// Para valores do tipo date, um dos argumentos sempre será tratado como milissegundos. Imagine que você queira adicionar 3 dias ao valor do campo date. Você consegue fazer de duas maneiras. A primeira é passar em um dos argumentos o número equivalente a 3 dias em milissegundos ( 2,592e+8 ). A segunda é criar uma expressão que devolva esse número:
+
+db.sales.aggregate([
+  { $project: { item: 1, billing_date: { $add: ["$date", 2.592e+8] } } }
+]);
+
+db.sales.aggregate([
+  { $project: { item: 1, billing_date: { $add: ["$date", 3 * 24 * 60 * 60000] } } }
+]);
+
+// Exercício de fixação PARTE II:
+// Calcule qual o custo total de cada produto, considerando o preço de compra e os impostos.
+use ('storage');
+db.products.aggregate(
+  [
+    {
+      $project: {
+        name: 1, total: { $add: ["$purchase_price", "$taxes"] }
+      }
+    }
+  ]
+);
+
+// Expressão $subtract:
+// Vale ressaltar que o segundo argumento sempre será subtraído do primeiro. Funciona exatamente como o $add, porém, subtraindo.
+
+// Exemplo usando o add com subtract:
+db.sales.aggregate([
+  {
+    $project: {
+      item: 1,
+      total: {
+        $subtract: [
+          { $add: ["$price", "$fee"] },
+          "$discount"
+        ]
+      }
+    }
+  }
+]);
+
+// É possível subtrair duas datas também. A operação a seguir utiliza a expressão $subtract para subtrair o valor do campo date da data corrente, utilizando a variável de sistema NOW (disponível a partir da versão 4.2 do MongoDB ) e retorna a diferença em milissegundos:
+
+db.sales.aggregate([
+  {
+    $project: {
+      item: 1,
+      dateDifference: {
+        $subtract: ["$$NOW", "$date"]
+      }
+    }
+  }
+]);
+
+// Utilizando o banco de dados storage, faça o seguinte exercício:
+// Calcule qual o lucro total de cada produto, considerando o preço de compra, os impostos e seu valor de venda.
+
+use("storage")
+db.products.aggregate([
+  {
+    $project: {
+      item: 1,
+      lucro_total: {
+        $subtract: ["$sale_price",
+          {$add: ["$purchase_price", "$taxes"]}
+          ], 
+      }
+    }
+  }
+]);
+
+// Expressão $ceil e $floor:
+// Ela basicamente arredonda o número para cima.
+{ _id: 1, value: 9.25 },
+{ _id: 2, value: 8.73 },
+{ _id: 3, value: 4.32 },
+{ _id: 4, value: -5.34 }
+
+db.samples.aggregate([
+  { $project: { value: 1, ceilingValue: { $ceil: "$value" } } }
+]);
+
+{ "_id" : 1, "value" : 9.25, "ceilingValue" : 10 }
+{ "_id" : 2, "value" : 8.73, "ceilingValue" : 9 }
+{ "_id" : 3, "value" : 4.32, "ceilingValue" : 5 }
+{ "_id" : 4, "value" : -5.34, "ceilingValue" : -5 }
+
+// Já a expressão $floor retorna o maior número inteiro menor ou igual ao número especificado, ou seja, faz um arredondamento para baixo
+
+// Utilizando a mesma coleção acima:
+db.samples.aggregate([
+  { $project: { value: 1, floorValue: { $floor: "$value" } } }
+]);
+
+{ "_id" : 1, "value" : 9.25, "floorValue" : 9 }
+{ "_id" : 2, "value" : 8.73, "floorValue" : 8 }
+{ "_id" : 3, "value" : 4.32, "floorValue" : 4 }
+{ "_id" : 4, "value" : -5.34, "floorValue" : -6 }
+
+// Expressão $round:
+// A expressão $round retorna o número inteiro mais próximo do valor atual e também permite definir a quantidade de casas decimais que você quer manter ao arredondar.
+
+// Considere os mesmos documentos da coleção sample utilizados no exemplo anterior. Se você aplicar a expressão $round no estágio $project:
+
+db.samples.aggregate([
+  { $project: { value: 1, roundedValue: { $round: ["$value"] } } }
+]);
+
+{ "_id" : 1, "value" : 9.25, "roundedValue" : 9 }
+{ "_id" : 2, "value" : 8.73, "roundedValue" : 9 }
+{ "_id" : 3, "value" : 4.32, "roundedValue" : 4 }
+{ "_id" : 4, "value" : -5.34, "roundedValue" : -5 }
+
+// Observe que para todos os valores, o $round arredondou para valores próximos. Quando é executado dessa forma, o que importa é o inteiro mais próximo:
+// 5.49 = 5, 5.51 = 6
+
+// Ele recebe um [array] como argumento. Isso serve para fazer a escolha de quantas casas decimais queremos.
+db.samples.aggregate([
+  { $project: { value: 1, roundedValue: { $round: ["$value", 1] } } }
+]);
+
+{ "_id" : 1, "value" : 9.25, "roundedValue" : 9.2 }
+{ "_id" : 2, "value" : 8.73, "roundedValue" : 8.7 }
+{ "_id" : 3, "value" : 4.32, "roundedValue" : 4.3 }
+{ "_id" : 4, "value" : -5.34, "roundedValue" : -5.3 }
+
+// Exercício de fixação do round:
+// Retorne o menor número inteiro relativo ao preço de venda de cada produto;
+
+use ('storage')
+db.products.aggregate(
+  [
+    {
+      $project: {
+        item: { $round: ["$sale_price"] }
+      }
+    },
+    {
+      $sort: {
+        item: 1,
+      }
+    },
+    {
+      $limit: 1
+    }
+  ]
+);
+
+// Expressão $abs:
+// A expressão é muito útil a diferença entre dois valores.
+// Ex: 
+
+// Dados:
+{ _id: 1, start: 5, end: 8 },
+{ _id: 2, start: 4, end: 4 },
+{ _id: 3, start: 9, end: 7 },
+{ _id: 4, start: 6, end: 7 }
+
+// Aplicando a expressão $abs combinada com a expressão $subtract no estágio $project, podemos retornar a diferença entre os valores dos campos start e end:
+
+db.ratings.aggregate([
+  {
+    $project: {
+      delta: {
+        $abs: { $subtract: ["$start", "$end"] }
+      }
+    }
+  }
+]);
+
+{ "_id" : 1, "delta" : 3 }
+{ "_id" : 2, "delta" : 0 }
+{ "_id" : 3, "delta" : 2 }
+{ "_id" : 4, "delta" : 1 }
+
+// Calcule o valor absoluto do lucro total de cada produto.
+use ('storage')
+db.products.aggregate(
+  [
+    {
+      $project: {
+        name: 1,
+        _id: 0,
+        lucro_absoluto: {
+          $abs: {
+            $subtract: [
+              "$sale_price",
+              { $add: ["$taxes","$purchase_price"]
+            } ]
+          }
+        }
+      }
+    }
+  ]
+);
+
+// Expressão multiply: ela irá multiplicar dois valores numéricos. Esses valores devem ser passados em um array.
+
+// Considerando os seguinres dados:
+{ _id: 1, item: "abc", price: 10, quantity: 2, date: ISODate("2014-03-01T08:00:00Z") },
+{ _id: 2, item: "jkl", price: 20, quantity: 1, date: ISODate("2014-03-01T09:00:00Z") },
+{ _id: 3, item: "xyz", price: 5, quantity: 10, date: ISODate("2014-03-15T09:00:00Z") }
+
+// Na agregação a seguir, utilizamos o $multiply no estágio $project para projetar um novo campo chamado total, que conterá o valor da multiplicação entre os campos price e quantity:
+db.sales.aggregate([
+  {
+    $project: {
+      date: 1,
+      item: 1,
+      total: {
+        $multiply: ["$price", "$quantity"]
+      }
+    }
+  }
+]);
+
+//result:
+{ "_id" : 1, "item" : "abc", "date" : ISODate("2014-03-01T08:00:00Z"), "total" : 20 }
+{ "_id" : 2, "item" : "jkl", "date" : ISODate("2014-03-01T09:00:00Z"), "total" : 20 }
+{ "_id" : 3, "item" : "xyz", "date" : ISODate("2014-03-15T09:00:00Z"), "total" : 50 }
+
+
+// Calcule qual o valor total em estoque de cada produto, considerando o preço de venda e a quantidade;
+use ('storage');
+
+db.products.aggregate(
+  [
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        price: {
+          $multiply: ['$quantity', '$sale_price']
+        }
+      }
+    }
+  ]
+)
+// Calcule qual será o lucro total de cada produto caso todo o estoque seja vendido.
+use ('storage');
+
+db.products.aggregate(
+  [
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        price: {
+          $multiply: ['$quantity', { $subtract: ['$sale_price', '$purchase_price']}]
+        }
+      }
+    }
+  ]
+)
+
+// Operador divide: A expressão $divide, como o próprio nome sugere, divide dois valores. O primeiro argumento é o dividendo, e o segundo é o divisor.
+
+// Considerando os seguintes dados:
+{ _id: 1, name: "A", hours: 80, resources: 7 },
+{ _id: 2, name: "B", hours: 40, resources: 4 }
+
+// A agregação abaixo utiliza o $divide para dividir o valor do campo hours por 8 e calcular o número de dias de trabalho ( workdays ):
+
+db.planning.aggregate([
+  {
+    $project: {
+      name: 1,
+      workdays: {
+        $divide: ["$hours", 8]
+      }
+    }
+  }
+]);
+
+{ "_id" : 1, "name" : "A", "workdays" : 10 }
+{ "_id" : 2, "name" : "B", "workdays" : 5 }
+
+
+// Calcule qual será o preço de venda de cada produto caso haja uma promoção de 50% de desconto.
+
+use ('storage');
+db.products.aggregate([
+  {
+    $project: {
+      desconto: {
+        $divide: ["$sale_price", 2]
+      }
+    }
+  }
+]);
+
+
+// Agora mudando um pouco, sobre o estágio $addFields:
+// O $addFields é um estágio que adiciona novos campos aos documentos. A saída desse estágio conterá todos os campos existentes nos documentos de entrada e adicionará os novos campos especificados.
+// Você pode incluir subdocumentos ou arrays de subdocumentos, utilizando o conceito de dot notation . Um pipeline pode conter mais de um estágio $addFields.
+
+// dado:
+{
+  _id: 1,
+  student: "Maya",
+  homework: [10, 5, 10],
+  quiz: [10, 8],
+  extraCredit: 0
+},
+{
+  _id: 2,
+  student: "Ryan",
+  homework: [5, 6, 5],
+  quiz: [8, 8],
+  extraCredit: 8
+}
+
+// query
+
+db.scores.aggregate([
+  {
+    $addFields: {
+      totalHomework: { $sum: "$homework" } ,
+      totalQuiz: { $sum: "$quiz" }
+    }
+  },
+  {
+    $addFields: {
+      totalScore: {
+        $add: [ "$totalHomework", "$totalQuiz", "$extraCredit" ]
+      }
+    }
+  }
+]);
+
+
+// resultado:
+{
+  "_id" : 1,
+  "student" : "Maya",
+  "homework" : [ 10, 5, 10 ],
+  "quiz" : [ 10, 8 ],
+  "extraCredit" : 0,
+  "totalHomework" : 25,
+  "totalQuiz" : 18,
+  "totalScore" : 43
+}
+{
+  "_id" : 2,
+  "student" : "Ryan",
+  "homework" : [ 5, 6, 5 ],
+  "quiz" : [ 8, 8 ],
+  "extraCredit" : 8,
+  "totalHomework" : 16,
+  "totalQuiz" : 16,
+  "totalScore" : 40
+}
+
+// Calcule o valor total do estoque, considerando que cada produto valha o mesmo que seu preço de venda. Lembre-se da quantidade.
+use('storage');
+
+db.products.aggregate([
+  {
+    $addFields: {
+      valorTotal: {
+        $multiply: ['$sale_price', '$quantity'],
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      name: 1,
+      valorTotal: 1,
+    }
+  }
+])
