@@ -1,0 +1,12 @@
+{
+  "name": "26.3",
+  "version": "1.0.0",
+  "description": "",
+  "main": "calculadora.js",
+  "scripts": {
+    "start": "node calculadora.js",
+    "test": "mocha calculadora.test.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
