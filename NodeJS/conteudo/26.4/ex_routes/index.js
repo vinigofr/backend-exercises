@@ -54,9 +54,6 @@ app.get('/recipes', (req, res) => {
   res.json(recipes);
 });
 
-
-
-
 app.listen('3000', () => {
   console.log('Servidor aberto na porta 3000');
 });
